@@ -12,28 +12,19 @@ import azure.functions as func
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
-    #name = req.params.get('name')
-    #parse POST bosy to json
+    #Extract method imputs from payload
     req_body = req.get_json()
     inputPDF = req_body.get('InputPDF_URL')
+    green_words = req_body.get('GreenWords')    
+    red_words = req_body.get('RedWords')
 
     #Get azure blob connection string. To learn how to use local stored keys check https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python
     connect_str = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
 
-    greenWords = ["exceeding expectations"," positive ", " favourable ", " profit up", " excellent ", " transformational "]
-    redWords = [" challenging ", " difficult ", " unpredictable ", " lower ", " poor ", " tough ", "below expectations", " brexit "]
-    numberOfGreenwords = 0
-    numberOfRedwords = 0
+    #Init variables
+    number_of_green_words = 0
+    number_of_red_words = 0
     azure_blob_container_name = "markedreports"
-
-    # Create the BlobServiceClient object which will be used to create a container client
-    blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-
-    #generate unique file name
-    file_name = uuid.uuid4().hex + ".pdf"
-
-    # Create a blob client using the local file name as the name for the blob
-    blob_client = blob_service_client.get_blob_client(container=azure_blob_container_name, blob=file_name)
     
     # open the pdf file
     #r = requests.get("https://pdfhelperstorage.blob.core.windows.net/markedreports/Smurfit_Kappa_Annual_Report_2020.pdf")
@@ -53,9 +44,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         
         
         # loop all green words
-        for gword in greenWords:
+        for gword in green_words:
             text_instances = page.searchFor(gword)
-            numberOfGreenwords = numberOfGreenwords + len(text_instances)
+            number_of_green_words = number_of_green_words + len(text_instances)
 
             #HIGHLIGHT green words
             for inst in text_instances:
@@ -64,9 +55,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 highlight.update()
         
         # loop all red words
-        for rword in redWords:
+        for rword in red_words:
             text_instances = page.searchFor(rword)
-            numberOfRedwords = numberOfRedwords + len(text_instances)
+            number_of_red_words = number_of_red_words + len(text_instances)
 
             #HIGHLIGHT red words
             for inst in text_instances:
@@ -74,12 +65,23 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 highlight.setColors({"stroke":(1, 0, 0), "fill":(0.75, 0.8, 0.95)})
                 highlight.update()
 
-    # upload output file to blob
+    
+    #Upload output file to Azure blob. For the code to work on Azure, the Azure Storage connection string needed to upaded on the Azure function setings (using the name of 'AZURE_STORAGE_CONNECTION_STRING'),
+    #and also having a storage container named 'markedreports'
+    
+    #Create the BlobServiceClient object which will be used to create a container client
+    blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+
+    #Generate a unique file name for the result PDF
+    file_name = uuid.uuid4().hex + ".pdf"
+
+    # Create a blob client using the local file name as the name for the blob
+    blob_client = blob_service_client.get_blob_client(container=azure_blob_container_name, blob=file_name)
     blob_client.upload_blob(doc.tobytes())
 
-    #return func.HttpResponse(f"https://{blob_client.account_name}.blob.core.windows.net/{azure_blob_container_name}/{file_name}")
+    #Build Result Message and return result to caller
     marked_pdf = f"https://{blob_client.account_name}.blob.core.windows.net/{azure_blob_container_name}/{file_name}"
-    resultJSON = {"MarkedPDFURL" : marked_pdf, "NumberOfGreenWords" : numberOfGreenwords, "NumberOfRednWords" : numberOfRedwords}
+    resultJSON = {"MarkedPDFURL" : marked_pdf, "NumberOfGreenWords" : number_of_green_words, "NumberOfRednWords" : number_of_red_words}
     return func.HttpResponse(
         json.dumps(resultJSON),
         mimetype="application/json",

@@ -8,10 +8,10 @@ Once the code is deployed (or running on your machine),
 use HTTP tester tool (like Postman) to call the ‘Mark’ method using HTTP POST
 
 Example of payload:
-''' JSON
+```JSON
 {
-  "InputPDF_URL": https://SomeValidURLWithPDF/thefilename.pdf,
-  "GreenWords" : [“GreenWord1”, “GreenWord2”],
-  "RedWords" : [“RedWords1”, “RedWords2”]
+  "InputPDF_URL": "https://SomeValidURLWithPDF/thefilename.pdf",
+  "GreenWords" : ["GreenWord1", "GreenWord2"],
+  "RedWords" : ["RedWords1", "RedWords2"]
 }
-'''
+```

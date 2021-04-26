@@ -17,7 +17,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     number_of_red_words = 0
     azure_blob_container_name = "markedreports"
 
-    #Extract method imputs from payload
+    #Extract method inputs from payload
     req_body = req.get_json()
     PDF_URL = req_body.get('InputPDF_URL')
     green_words = req_body.get('GreenWords')    
@@ -82,3 +82,4 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         json.dumps(resultJSON),
         mimetype="application/json",
     )
+

@@ -15,7 +15,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     #Init variables
     number_of_green_words = 0
     number_of_red_words = 0
-    azure_blob_container_name = "markedreports"
+    azure_blob_container_name = os.getenv('PDFKEYWORDSMARKER_AZURE_STORAGE_CONTAINER_NAME') #Make sure it set on the machine / Azure function. To read more about how to use env variables check https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python
 
     #Extract method inputs from payload
     req_body = req.get_json()
